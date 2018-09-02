@@ -13,7 +13,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -28,7 +31,14 @@ public class UserController {
     private StringRedisTemplate redisTemplate;
 
     @PostMapping("/login/{openid}")
-    public ResultVO login(@PathVariable("openid") String openid, HttpServletResponse response) {
+    public ResultVO login(@PathVariable("openid") String openid,
+                          HttpServletRequest request,
+                          HttpServletResponse response) {
+        Cookie cookie = CookieUtil.get(request, "token");
+        if (Objects.nonNull(cookie) &&
+                Objects.nonNull(redisTemplate.opsForValue().get(String.format("token_%s", cookie.getValue())))) {
+            return ResultVOUtil.success();
+        }
         User user = userService.findUserByOpenid(openid);
         if (user == null) {
             throw new NotFoundUserException("Not Found User");
