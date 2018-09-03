@@ -20,6 +20,8 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static com.wing.user.enums.UserTypeEnum.BUYER;
+
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -44,15 +46,19 @@ public class UserController {
             throw new NotFoundUserException("Not Found User");
         }
         String token = UUID.randomUUID().toString().replace("-", "");
+        String storeContent = openid + "_";
         switch (user.getUserType()) {
             case BUYER:
+                storeContent += BUYER;
+                break;
             case SELLER:
-                redisTemplate.opsForValue().set(String.format("token_%s", token), openid, 7200, TimeUnit.SECONDS);
-                CookieUtil.set(response, "token", token, 7200);
+//              storeContent += SELLER;
                 break;
             default:
                 new NotFoundUserException("Not Found User by Type");
         }
+        redisTemplate.opsForValue().set(String.format("token_%s", token), storeContent, 7200, TimeUnit.SECONDS);
+        CookieUtil.set(response, "token", token, 7200);
         return ResultVOUtil.success();
     }
 }
